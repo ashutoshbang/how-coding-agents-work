@@ -1,5 +1,65 @@
 # Data Flow: What Is Sent to Servers
 
+## High-level diagram
+
+```mermaid
+flowchart LR
+    U(["👤 You"])
+
+    subgraph LOCAL["💻 Your machine"]
+        direction TB
+        A["🤖 Agent client<br/>CLI / IDE extension<br/><i>holds conversation history</i>"]
+        T["🛠️ Local tools<br/>read · grep · edit · shell · git · tests"]
+        R[("📁 Your repo & filesystem<br/>source, configs, .env, logs")]
+        L[("🗒️ Session logs<br/>on disk")]
+        A -- "tool call" --> T
+        T -- "reads / writes" --> R
+        R -- "contents, matches, cmd output" --> T
+        T -- "tool result" --> A
+        A -.-> L
+    end
+
+    subgraph VENDOR["☁️ Vendor cloud"]
+        direction TB
+        M["🧠 Model inference API<br/><i>stateless LLM</i>"]
+        AU["🔑 Auth / entitlement"]
+        TE["📊 Telemetry"]
+        IX["🔎 Code index<br/><i>some products only</i>"]
+    end
+
+    subgraph THIRD["🌐 Third-party services"]
+        direction TB
+        X["Web search / fetch<br/>Remote MCP servers<br/>GitHub API"]
+    end
+
+    U -- "prompt" --> A
+    A -- "answer & diffs" --> U
+
+    A == "① system prompt + instructions<br/>+ your messages + full history<br/>+ <b>tool results (file contents, output)</b>" ==> M
+    M == "② text or tool-call request" ==> A
+    A -- "tokens, client version" --> AU
+    A -. "usage events, errors" .-> TE
+    A -. "file chunks / embeddings" .-> IX
+    A -- "queries & arguments<br/>chosen by the model" --> X
+
+    classDef local fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+    classDef cloud fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
+    classDef third fill:#fff3e0,stroke:#ef6c00,color:#e65100
+    classDef model fill:#ede7f6,stroke:#5e35b1,color:#311b92,stroke-width:2px
+    class A,T,R,L local
+    class AU,TE,IX cloud
+    class M model
+    class X third
+    linkStyle 7 stroke:#c62828,stroke-width:3px
+    style LOCAL fill:#f6fff6,stroke:#2e7d32
+    style VENDOR fill:#f5f9ff,stroke:#1565c0
+    style THIRD fill:#fffaf2,stroke:#ef6c00
+```
+
+**Legend:** 🟥 thick red = the main path where your code leaves the machine · ━ thick = model round-trip · ┄ dotted = optional / product-dependent · 🟩 local · 🟦 vendor · 🟧 third-party
+
+> The model never touches your disk. It only sees what the agent client puts in step ①, and the most sensitive part of that is **tool results**: file contents, search matches and command output.
+
 ## Destinations
 
 | Destination | Purpose | Typical content |
