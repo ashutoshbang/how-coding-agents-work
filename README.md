@@ -38,7 +38,7 @@ A plain-language guide to what an AI coding agent (e.g. GitHub Copilot CLI, Copi
 
 ![High-level data flow diagram](docs/images/data-flow.png)
 
-See [docs/data-flow.md](docs/data-flow.md) for the interactive Mermaid version and details.
+See [docs/data-flow.md](docs/data-flow.md) for the Mermaid version and a step-by-step key (①–⑧ main loop, Ⓐ–Ⓔ side channels).
 
 ## Contents
 

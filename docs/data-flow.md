@@ -12,11 +12,6 @@ flowchart LR
         T["🛠️ Local tools<br/>read · grep · edit · shell · git · tests"]
         R[("📁 Your repo & filesystem<br/>source, configs, .env, logs")]
         L[("🗒️ Session logs<br/>on disk")]
-        A -- "tool call" --> T
-        T -- "reads / writes" --> R
-        R -- "contents, matches, cmd output" --> T
-        T -- "tool result" --> A
-        A -.-> L
     end
 
     subgraph VENDOR["☁️ Vendor cloud"]
@@ -32,15 +27,20 @@ flowchart LR
         X["Web search / fetch<br/>Remote MCP servers<br/>GitHub API"]
     end
 
-    U -- "prompt" --> A
-    A -- "answer & diffs" --> U
+    U -- "① prompt" --> A
+    A == "② system prompt + instructions<br/>+ your messages + full history<br/>+ <b>tool results (file contents, output)</b>" ==> M
+    M == "③ text or tool-call request" ==> A
+    A -- "④ tool call" --> T
+    T -- "⑤ reads / writes" --> R
+    R -- "⑥ data" --> T
+    T -- "⑦ tool result → back to ②" --> A
+    A -- "⑧ final answer & diffs" --> U
 
-    A == "① system prompt + instructions<br/>+ your messages + full history<br/>+ <b>tool results (file contents, output)</b>" ==> M
-    M == "② text or tool-call request" ==> A
-    A -- "tokens, client version" --> AU
-    A -. "usage events, errors" .-> TE
-    A -. "file chunks / embeddings" .-> IX
-    A -- "queries & arguments<br/>chosen by the model" --> X
+    A -- "Ⓐ tokens, client version" --> AU
+    A -. "Ⓑ usage events, errors" .-> TE
+    A -. "Ⓒ file chunks / embeddings" .-> IX
+    A -- "Ⓓ queries & arguments<br/>chosen by the model" --> X
+    A -. "Ⓔ transcript" .-> L
 
     classDef local fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
     classDef cloud fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
@@ -50,7 +50,7 @@ flowchart LR
     class AU,TE,IX cloud
     class M model
     class X third
-    linkStyle 7 stroke:#c62828,stroke-width:3px
+    linkStyle 1 stroke:#c62828,stroke-width:3px
     style LOCAL fill:#f6fff6,stroke:#2e7d32
     style VENDOR fill:#f5f9ff,stroke:#1565c0
     style THIRD fill:#fffaf2,stroke:#ef6c00
@@ -58,7 +58,32 @@ flowchart LR
 
 **Legend:** 🟥 thick red = the main path where your code leaves the machine · ━ thick = model round-trip · ┄ dotted = optional / product-dependent · 🟩 local · 🟦 vendor · 🟧 third-party
 
-> The model never touches your disk. It only sees what the agent client puts in step ①, and the most sensitive part of that is **tool results**: file contents, search matches and command output.
+### Reading the diagram
+
+**Main loop (numbers)** — repeats ②→⑦ until the task is done:
+
+| # | Step | Leaves your machine? |
+|---|------|----------------------|
+| ① | You type a prompt into the agent | No |
+| ② | Agent sends system prompt, repo instructions, full history **and all tool results so far** to the model | **Yes — this is where your code goes** |
+| ③ | Model replies with text or a request to call a tool | (incoming) |
+| ④ | Agent runs the tool locally (may ask your permission) | No |
+| ⑤ | Tool reads or writes files / runs commands | No |
+| ⑥ | Files, search matches or command output come back to the tool | No |
+| ⑦ | Tool result is appended to history → next request goes back to ② | Sent on the next ② |
+| ⑧ | Agent shows you the final answer and file changes | No |
+
+**Side channels (letters)** — happen alongside the loop:
+
+| | Channel | Notes |
+|---|---------|-------|
+| Ⓐ | Auth / entitlement | Login tokens, client version |
+| Ⓑ | Telemetry | Usage events, errors; configurable in some products |
+| Ⓒ | Code index | Only some products upload file chunks/embeddings |
+| Ⓓ | Third-party tools | Whatever arguments the model chose (search queries, code snippets, etc.) |
+| Ⓔ | Session logs | Local disk only |
+
+> The model never touches your disk. It only sees what the agent client puts in step ②, and the most sensitive part of that is **tool results**: file contents, search matches and command output.
 
 ## Destinations
 
