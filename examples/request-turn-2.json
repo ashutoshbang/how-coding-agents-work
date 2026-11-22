@@ -1,0 +1,17 @@
+{
+  "model": "some-model",
+  "stream": true,
+  "tools": ["...same as turn 1..."],
+  "messages": [
+    { "role": "system", "content": "...same as turn 1..." },
+    { "role": "system", "content": "...same as turn 1..." },
+    { "role": "user", "content": "Fix the bug in utils/date.js where dates are off by one." },
+    { "role": "assistant", "tool_calls": [ { "id": "call_1", "type": "function", "function": { "name": "view", "arguments": "{\"path\": \"/home/me/myapp/utils/date.js\"}" } } ] },
+    {
+      "role": "tool",
+      "tool_call_id": "call_1",
+      "content": "1. export function addDays(date, n) {\n2.   const d = new Date(date);\n3.   d.setDate(d.getDate() + n + 1);\n4.   return d;\n5. }\n"
+    }
+  ],
+  "_note": "The full file contents above were read LOCALLY and are now sent to the server. Every subsequent turn re-sends this history."
+}

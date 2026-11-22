@@ -1,0 +1,15 @@
+{
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "tool_calls": [
+          { "id": "call_1", "type": "function", "function": { "name": "view", "arguments": "{\"path\": \"/home/me/myapp/utils/date.js\"}" } }
+        ]
+      },
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": { "prompt_tokens": 2150, "completion_tokens": 24 }
+}
